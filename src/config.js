@@ -3,4 +3,7 @@ const EMPLOYEE_IDS = [
   "a002",
 ];
 
-module.exports = { EMPLOYEE_IDS };
+// 集計結果の出力先
+OUTPUT_DIR="./output";
+
+module.exports = { EMPLOYEE_IDS, OUTPUT_DIR };
