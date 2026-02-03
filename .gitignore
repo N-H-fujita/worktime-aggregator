@@ -1,4 +1,17 @@
+# -----------------------------------
+# Environment variables
+# -----------------------------------
 .env
-local_csv/*
-output/*
+
+# -----------------------------------
+# Local test CSVs and output directories
+# These are generated locally and should not be committed
+# -----------------------------------
+server_csv/       # ローカル動作確認用 CSV
+local_csv/        # copy.js がコピーする作業用ディレクトリ
+output/           # 集計結果の出力ディレクトリ
+
+# -----------------------------------
+# Node modules
+# -----------------------------------
 node_modules
