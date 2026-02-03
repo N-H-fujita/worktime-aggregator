@@ -7,9 +7,12 @@
 # Local test CSVs and output directories
 # These are generated locally and should not be committed
 # -----------------------------------
-server_csv/       # ローカル動作確認用 CSV
-local_csv/        # copy.js がコピーする作業用ディレクトリ
-output/           # 集計結果の出力ディレクトリ
+# ローカル動作確認用 CSV
+server_csv/
+# copy.js がコピーする作業用ディレクトリ
+local_csv/
+# 集計結果の出力ディレクトリ
+output/
 
 # -----------------------------------
 # Node modules
