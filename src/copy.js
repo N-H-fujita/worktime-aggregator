@@ -1,29 +1,52 @@
 const fs = require("fs");
 const path = require("path");
+const iconv = require("iconv-lite");
 
 /**
- * CSVファイルをコピーする
+ * Shift_JIS → UTF-8 変換しながらコピー（ストリーム方式）
+ * @param {string} srcPath コピー元パス
+ * @param {string} destPath コピー先パス
+ * @return {Promise<void>}
+ */
+async function convertAndCopyFile(srcPath, destPath) {
+  return new Promise((resolve, reject) => {
+    const readStream = fs.createReadStream(srcPath);
+    const writeStream = fs.createWriteStream(destPath, { encoding: "utf8" });
+
+    readStream
+      .pipe(iconv.decodeStream("shift_jis"))
+      .pipe(iconv.encodeStream("utf8"))
+      .pipe(writeStream)
+      .on("finish", resolve)
+      .on("error", reject);
+  });
+}
+
+/**
+ * CSVファイルをコピー＆UTF-8変換
  * @param {string[]} fileNames
  * @param {string} serverBasePath
  * @param {string} localDir
- * @returns {Promise<void>}
+ * @return {Promise<void>}
  */
 async function copyCSVFiles(fileNames, serverBasePath, localDir) {
-  // 出力先ディレクトリがなければ作成
-  if (!fs.existsSync(localDir)) {
-    fs.mkdirSync(localDir, { recursive: true });
-  }
+  if (!fs.existsSync(localDir)) fs.mkdirSync(localDir, { recursive: true });
 
   for (const fileName of fileNames) {
-    const srcPath = path.join(serverBasePath, fileName);
-    const destPath = path.join(localDir, fileName);
+    const src = path.join(serverBasePath, fileName);
+    const dest = path.join(localDir, fileName);
 
-    if (!fs.existsSync(srcPath)) {
-      throw new Error(`コピー元ファイルが存在しません: ${srcPath}`);
+    if (!fs.existsSync(src)) {
+      console.error(`コピー元が存在しません: ${src}`);
+      continue;
     }
 
-    fs.copyFileSync(srcPath, destPath);
-    console.log(`コピー完了: ${fileName}`);
+    try {
+      await convertAndCopyFile(src, dest);
+      console.log(`コピー＆UTF-8変換完了: ${fileName}`);
+    } catch (err) {
+      console.error(`処理失敗: ${fileName}`, err.message);
+    }
   }
 }
 

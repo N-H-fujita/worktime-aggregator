@@ -1,9 +1,9 @@
 const { parseArgs } = require('./src/args');
-const { EMPLOYEE_IDS } = require('./src/config');
+const { EMPLOYEE_IDS, serverBasePath, localDir } = require('./src/config');
 const { generateCsvFilenames } = require('./src/fileNames');
 const { copyCSVFiles } = require('./src/copy');
 
-function main() {
+async function main() {
 
   // --- 年・月を取得 ---
   const { year, month } = parseArgs();
@@ -12,9 +12,12 @@ function main() {
   const csvFileNames = generateCsvFilenames(year, month, EMPLOYEE_IDS)
 
   // --- CSVコピー + UTF-8変換 ---
-  copyCSVFiles(csvFileNames, serverBasePath, localDir);
+  await copyCSVFiles(csvFileNames, serverBasePath, localDir);
 
   console.log(csvFileNames);
 }
 
-main();
+main().catch((err) => {
+  console.error("❌ 処理中にエラー:", err.message);
+  process.exit();
+});
