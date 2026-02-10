@@ -9,10 +9,17 @@ const EMPLOYEE_IDS = [
 // 業務コード → 業務名
 /// TODO: 将来的には data/tasks.json などに移行
 const taskMap = {
-  "P001": "開発",
-  "P002": "レビュー",
-  "P003": "会議",
+  T100: "○○案件",
+  T200: "△△案件",
+  T400: "××案件",
+  T500: "ミーティング",
+  T600: "雑務",
+  T700: "研修",
+  T800: "テスト",
+  T900: "その他",
+  T000: "休憩",
 };
+
 
 const serverBasePath = process.env.SERVER_BASE_PATH //コピー元
 const localDir = process.env.LOCAL_CSV_DIR;         // コピー先
