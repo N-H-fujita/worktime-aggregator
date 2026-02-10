@@ -1,6 +1,7 @@
 const { parseArgs } = require('./src/args');
-const { EMPLOYEE_IDS, serverBasePath, localDir } = require('./src/config');
+const { EMPLOYEE_IDS, serverBasePath, localDir, taskMap } = require('./src/config');
 const { generateCsvFilenames } = require('./src/fileNames');
+const { aggregateCSV } = require('./src/aggregate');
 const { copyCSVFiles } = require('./src/copy');
 
 async function main() {
@@ -14,7 +15,10 @@ async function main() {
   // --- CSVコピー + UTF-8変換 ---
   await copyCSVFiles(csvFileNames, serverBasePath, localDir);
 
-  console.log(csvFileNames);
+  // --- CSV集計 ---
+  const result = await aggregateCSV(csvFileNames, './local_csv', taskMap);
+
+  console.log(result);
 }
 
 main().catch((err) => {
