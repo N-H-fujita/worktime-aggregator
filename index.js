@@ -1,5 +1,5 @@
 const { parseArgs } = require('./src/args');
-const { employeeMap, taskMap, serverBasePath, localDir, outputDir } = require('./src/config');
+const { employeeMap, taskMap, outputFlags, serverBasePath, localDir, outputDir } = require('./src/config');
 const { generateCsvFilenames } = require('./src/fileNames');
 const { aggregateCSV } = require('./src/aggregate');
 const { copyCSVFiles } = require('./src/copy');
@@ -22,7 +22,7 @@ async function main() {
   // --- CSV集計（現状の main に合わせる） ---
   const { teamTotals, employeeTotals } = await aggregateCSV(csvFileNames, localDir, taskMap, employeeIds);
 
-  writeOutput({ teamTotals, employeeTotals, employeeMap, taskMap, outputDir, year, monthStr });
+  writeOutput({ teamTotals, employeeTotals, employeeMap, taskMap, outputFlags, outputDir, year, monthStr });
 }
 
 main().catch((err) => {

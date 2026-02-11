@@ -84,4 +84,17 @@ function validateTaskMap(taskMap) {
   // if (invalid) throw new Error(`[config] invalid task code format: ${invalid}`);
 }
 
-module.exports = { readJsonPreferReal, validateEmployeeMap, validateTaskMap };
+function validateOutputFlags(flags) {
+  if (!flags || typeof flags !== "object" || Array.isArray(flags)){
+    throw new Error("[config] output.json must be an object");
+  }
+
+  const keys = ["txt", "json", "csv"];
+  for (const k of keys) {
+    if (typeof flags[k] !== "boolean") {
+      throw new Error(`[config] output.json "${k}" must be boolean`);
+    }
+  }
+}
+
+module.exports = { readJsonPreferReal, validateEmployeeMap, validateTaskMap, validateOutputFlags };

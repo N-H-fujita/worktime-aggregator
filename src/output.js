@@ -70,12 +70,17 @@ function formatText({ teamTotals, employeeTotals, taskMap, employeeMap, year, mo
  * 出力先: OUTPUT_DIR/YYYY-MM/summary.txt
  * @returns {{ dir: string, filePath: string }}
  */
-function writeOutput({ teamTotals, employeeTotals, taskMap, employeeMap, outputDir, year, monthStr }) {
+function writeOutput({ teamTotals, employeeTotals, taskMap, employeeMap, outputFlags, outputDir, year, monthStr }) {
   if (!outputDir) {
     throw new Error("outputDir is required (set OUTPUT_DIR in .env)");
   }
+  if (!outputFlags) {
+    throw new Error("outputFlags is required");
+  }
 
-  const periodDir = path.join(outputDir, `${year}-${monthStr}`);
+  const outputs = {};
+
+  const periodDir = path.join(outputDir, "txt", `${year}-${monthStr}`);
   ensureDir(periodDir);
 
   const filePath = path.join(periodDir, "summary.txt");
@@ -85,7 +90,9 @@ function writeOutput({ teamTotals, employeeTotals, taskMap, employeeMap, outputD
   fs.writeFileSync(filePath, content, "utf8");
   console.log(`✅ 出力完了: ${filePath}`);
 
-  return { dir: periodDir, filePath };
+  outputs.txt = { dir: periodDir, filePath };
+
+  return { outputs };
 }
 
 module.exports = { writeOutput, formatText };

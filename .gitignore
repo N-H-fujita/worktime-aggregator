@@ -16,6 +16,8 @@ output/
 # 実データ（exampleファイルはコミットする）
 data/employees.json
 data/tasks.json
+# アプリ設定（実環境用）
+settings/output.json
 
 # -----------------------------------
 # Node modules
