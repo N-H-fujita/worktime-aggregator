@@ -20,12 +20,14 @@ const taskMap = {
   T000: "休憩",
 };
 
-const serverBasePath = process.env.SERVER_BASE_PATH //コピー元
+const serverBasePath = process.env.SERVER_BASE_PATH // コピー元
 const localDir = process.env.LOCAL_CSV_DIR;         // コピー先
+const outputDir = process.env.OUTPUT_DIR;           // 集計結果の出力先
 
 module.exports = {
   EMPLOYEE_IDS,
   serverBasePath,
   localDir,
+  outputDir,
   taskMap,
 };
