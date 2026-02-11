@@ -15,6 +15,19 @@ function ensureDir(dir) {
 }
 
 /**
+ * CSV用に値をエスケープする（カンマ/改行/ダブルクォート対応）
+ * @param {string | number} value
+ * @returns {string}
+ */
+function csvEscape(value) {
+  const s = String(value);
+  if (/[",\r\n]/.test(s)) {
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+  return s;
+}
+
+/**
  * { taskName: seconds } を出力する
  * @param {string[]} lines
  * @param {Record<string, number>} totals
@@ -70,7 +83,7 @@ function formatText({ teamTotals, employeeTotals, taskMap, employeeMap, year, mo
  * 出力先:
  * - txt:  OUTPUT_DIR/txt/YYYY-MM/summary.txt
  * - json: OUTPUT_DIR/json/YYYY-MM/summary.json
- *
+ * - csv:  OUTPUT_DIR/csv/YYYY-MM/summary.csv
  * @returns {{ outputs: { txt?: { dir: string, filePath: string }, json?: { dir: string, filePath: string } } }}
  */
 function writeOutput({
@@ -122,6 +135,46 @@ function writeOutput({
       employees: employeeMap || {},
       tasks: taskMap || {},
     };
+
+  // --- csv ---
+  if (outputFlags.csv) {
+    const periodDir = path.join(outputDir, "csv", `${year}-${monthStr}`);
+    ensureDir(periodDir);
+
+    const filePath = path.join(periodDir, "summary.csv");
+
+    const lines = [];
+    lines.push("year,month,employeeId,employeeName,taskName,seconds");
+
+    // employeeTotals: { a001: { taskName: seconds } }
+    for (const [empId, tasks] of Object.entries(employeeTotals)) {
+      const empName = employeeMap?.[empId] || empId;
+
+      // taskMap の定義順で出したい場合（txtと整合）
+      const taskNames = Object.values(taskMap);
+      for (const taskName of taskNames) {
+        const seconds = tasks?.[taskName];
+        if (!Number.isFinite(seconds) || seconds <= 0) continue;
+
+        const row = [
+          year,
+          monthStr,
+          empId,
+          empName,
+          taskName,
+          seconds,
+        ].map(csvEscape).join(",");
+
+        lines.push(row);
+      }
+    }
+
+    fs.writeFileSync(filePath, lines.join(os.EOL), "utf8");
+    console.log(`✅ csv 出力完了: ${filePath}`);
+
+    outputs.csv = { dir: periodDir, filePath };
+  }
+
 
     fs.writeFileSync(filePath, JSON.stringify(payload, null, 2), "utf8");
     console.log(`✅ json 出力完了: ${filePath}`);

@@ -1,5 +1,5 @@
 {
   "txt": true,
-  "json": false,
-  "csv": false
+  "json": true,
+  "csv": true
 }
