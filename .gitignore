@@ -12,7 +12,7 @@ server_csv/
 # copy.js がコピーする作業用ディレクトリ
 local_csv/
 # 集計結果の出力ディレクトリ
-output/
+/output/
 # 実データ（exampleファイルはコミットする）
 data/employees.json
 data/tasks.json
