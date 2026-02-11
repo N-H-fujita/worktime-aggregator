@@ -46,20 +46,18 @@ function readJsonPreferReal(realName, exampleName) {
   );
 }
 
-function validateEmployeeIds(employeeIds) {
-  if (!Array.isArray(employeeIds)) {
-    throw new Error("[config] employees.json must be an array of strings");
+function validateEmployeeMap(employeeMap) {
+  if (!employeeMap || typeof employeeMap !== "object" || Array.isArray(employeeMap)) {
+    throw new Error("[config] employees.json must be a key:value object");
   }
 
-  for (const id of employeeIds) {
+  for (const [id, name] of Object.entries(employeeMap)) {
     if (typeof id !== "string" || id.trim() === "") {
-      throw new Error("[config] employees.json contains invalid employee id");
+      throw new Error("[config] invalid employee id");
     }
-  }
-
-  const unique = new Set(employeeIds);
-  if (unique.size !== employeeIds.length) {
-    throw new Error("[config] employees.json contains duplicate employee ids");
+    if (typeof name !== "string" || name.trim() === "") {
+      throw new Error(`[config] empty name for employee id: ${id}`);
+    }
   }
 
   // 任意：形式チェック（必要なら）
@@ -88,9 +86,9 @@ function validateTaskMap(taskMap) {
   // if (invalid) throw new Error(`[config] invalid task code format: ${invalid}`);
 }
 
-const EMPLOYEE_IDS = readJsonPreferReal("employees.json", "employees.example.json");
+const employeeMap = readJsonPreferReal("employees.json", "employees.example.json");
 const taskMap = readJsonPreferReal("tasks.json", "tasks.example.json");
-validateEmployeeIds(EMPLOYEE_IDS);
+validateEmployeeMap(employeeMap);
 validateTaskMap(taskMap);
 
 const serverBasePath = process.env.SERVER_BASE_PATH; // コピー元
@@ -102,9 +100,9 @@ if (!serverBasePath || !localDir || !outputDir) {
 }
 
 module.exports = {
-  EMPLOYEE_IDS,
+  employeeMap,
+  taskMap,
   serverBasePath,
   localDir,
   outputDir,
-  taskMap,
 };

@@ -1,5 +1,5 @@
 const { parseArgs } = require('./src/args');
-const { EMPLOYEE_IDS, serverBasePath, localDir, outputDir, taskMap } = require('./src/config');
+const { employeeMap, taskMap, serverBasePath, localDir, outputDir } = require('./src/config');
 const { generateCsvFilenames } = require('./src/fileNames');
 const { aggregateCSV } = require('./src/aggregate');
 const { copyCSVFiles } = require('./src/copy');
@@ -10,16 +10,19 @@ async function main() {
   const { year, month } = parseArgs();
   const monthStr = String(month).padStart(2, "0");
 
+  // --- 社員ID一覧を作成 ---
+  const employeeIds = Object.keys(employeeMap);
+
   // --- ファイル名配列作成 ---
-  const csvFileNames = generateCsvFilenames(year, month, EMPLOYEE_IDS);
+  const csvFileNames = generateCsvFilenames(year, month, employeeIds);
 
   // --- CSVコピー + UTF-8変換 ---
   await copyCSVFiles(csvFileNames, serverBasePath, localDir);
 
   // --- CSV集計（現状の main に合わせる） ---
-  const { teamTotals, employeeTotals } = await aggregateCSV(csvFileNames, localDir, taskMap);
+  const { teamTotals, employeeTotals } = await aggregateCSV(csvFileNames, localDir, taskMap, employeeIds);
 
-  writeOutput({ teamTotals, employeeTotals, taskMap, outputDir, year, monthStr });
+  writeOutput({ teamTotals, employeeTotals, employeeMap, taskMap, outputDir, year, monthStr });
 }
 
 main().catch((err) => {

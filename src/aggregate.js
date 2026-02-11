@@ -6,10 +6,14 @@ const csv = require("csv-parser");
  * CSV集計（UTF-8前提・ヘッダー対応版）
  * @param {string[]} fileNames
  * @param {string} localDir
- * @param {Record<string, string>} taskMap 業務コード→業務名
+ * @param {Record<string, string>} taskMap 業務コード->業務名
+ * @param {string[]} employeeIds 社員ID一覧(例: ["a001", "a002"])
  * @return {Promise<{teamTotals: Record<string, number>, employeeTotals: Record<string, Record<string, number>>}>}
  */
-async function aggregateCSV(fileNames, localDir, taskMap) {
+async function aggregateCSV(fileNames, localDir, taskMap, employeeIds) {
+
+  const employeeIdSet = new Set(employeeIds);
+
   const teamTotals = {};
   const employeeTotals = {};
 
@@ -18,6 +22,10 @@ async function aggregateCSV(fileNames, localDir, taskMap) {
 
     // ファイル名例: "2025-10_a001.csv" → "a001"
     const empId = (fileName.split("_")[1] || "").replace(/\.csv$/i, "") || null;
+    if (empId && employeeIdSet.size > 0 && !employeeIdSet.has(empId)) {
+      continue;
+    }
+
     if (empId && !employeeTotals[empId]) employeeTotals[empId] = {};
 
     // copy と方針を揃える：無ければ warn してスキップ
