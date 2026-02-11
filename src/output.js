@@ -15,6 +15,19 @@ function ensureDir(dir) {
 }
 
 /**
+ * CSV用に値をエスケープする（カンマ/改行/ダブルクォート対応）
+ * @param {string | number} value
+ * @returns {string}
+ */
+function csvEscape(value) {
+  const s = String(value);
+  if (/[",\r\n]/.test(s)) {
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+  return s;
+}
+
+/**
  * { taskName: seconds } を出力する
  * @param {string[]} lines
  * @param {Record<string, number>} totals
@@ -23,9 +36,9 @@ function ensureDir(dir) {
 function pushTotalsByTaskMapOrder(lines, totals, taskMap) {
   const taskNames = Object.values(taskMap);
 
-  for(const taskName of taskNames) {
+  for (const taskName of taskNames) {
     const seconds = totals?.[taskName];
-    if(!Number.isFinite(seconds) || seconds <= 0) continue;
+    if (!Number.isFinite(seconds) || seconds <= 0) continue;
     lines.push(`${taskName}: ${formatSeconds(seconds)}`);
   }
 }
@@ -66,26 +79,110 @@ function formatText({ teamTotals, employeeTotals, taskMap, employeeMap, year, mo
 }
 
 /**
- * 集計結果を txt で出力する
- * 出力先: OUTPUT_DIR/YYYY-MM/summary.txt
- * @returns {{ dir: string, filePath: string }}
+ * 集計結果を出力する（txt/json/csv を outputFlags で出し分け）
+ * 出力先:
+ * - txt:  OUTPUT_DIR/txt/YYYY-MM/summary.txt
+ * - json: OUTPUT_DIR/json/YYYY-MM/summary.json
+ * - csv:  OUTPUT_DIR/csv/YYYY-MM/summary.csv
+ * @returns {{ outputs: { txt?: { dir: string, filePath: string }, json?: { dir: string, filePath: string } } }}
  */
-function writeOutput({ teamTotals, employeeTotals, taskMap, employeeMap, outputDir, year, monthStr }) {
+function writeOutput({
+  teamTotals,
+  employeeTotals,
+  taskMap,
+  employeeMap,
+  outputFlags,
+  outputDir,
+  year,
+  monthStr,
+}) {
   if (!outputDir) {
     throw new Error("outputDir is required (set OUTPUT_DIR in .env)");
   }
+  if (!outputFlags) {
+    throw new Error("outputFlags is required");
+  }
 
-  const periodDir = path.join(outputDir, `${year}-${monthStr}`);
-  ensureDir(periodDir);
+  const outputs = {};
 
-  const filePath = path.join(periodDir, "summary.txt");
+  // --- txt ---
+  if (outputFlags.txt) {
+    const periodDir = path.join(outputDir, "txt", `${year}-${monthStr}`);
+    ensureDir(periodDir);
 
-  const content = formatText({ teamTotals, employeeTotals, taskMap, employeeMap, year, monthStr });
+    const filePath = path.join(periodDir, "summary.txt");
+    const content = formatText({ teamTotals, employeeTotals, taskMap, employeeMap, year, monthStr });
 
-  fs.writeFileSync(filePath, content, "utf8");
-  console.log(`✅ 出力完了: ${filePath}`);
+    fs.writeFileSync(filePath, content, "utf8");
+    console.log(`✅ txt 出力完了: ${filePath}`);
 
-  return { dir: periodDir, filePath };
+    outputs.txt = { dir: periodDir, filePath };
+  }
+
+  // --- json ---
+  if (outputFlags.json) {
+    const periodDir = path.join(outputDir, "json", `${year}-${monthStr}`);
+    ensureDir(periodDir);
+
+    const filePath = path.join(periodDir, "summary.json");
+
+    const payload = {
+      year,
+      month: monthStr,
+      generatedAt: new Date().toISOString(),
+      teamTotals,
+      employeeTotals,
+      employees: employeeMap || {},
+      tasks: taskMap || {},
+    };
+
+  // --- csv ---
+  if (outputFlags.csv) {
+    const periodDir = path.join(outputDir, "csv", `${year}-${monthStr}`);
+    ensureDir(periodDir);
+
+    const filePath = path.join(periodDir, "summary.csv");
+
+    const lines = [];
+    lines.push("year,month,employeeId,employeeName,taskName,seconds");
+
+    // employeeTotals: { a001: { taskName: seconds } }
+    for (const [empId, tasks] of Object.entries(employeeTotals)) {
+      const empName = employeeMap?.[empId] || empId;
+
+      // taskMap の定義順で出したい場合（txtと整合）
+      const taskNames = Object.values(taskMap);
+      for (const taskName of taskNames) {
+        const seconds = tasks?.[taskName];
+        if (!Number.isFinite(seconds) || seconds <= 0) continue;
+
+        const row = [
+          year,
+          monthStr,
+          empId,
+          empName,
+          taskName,
+          seconds,
+        ].map(csvEscape).join(",");
+
+        lines.push(row);
+      }
+    }
+
+    fs.writeFileSync(filePath, lines.join(os.EOL), "utf8");
+    console.log(`✅ csv 出力完了: ${filePath}`);
+
+    outputs.csv = { dir: periodDir, filePath };
+  }
+
+
+    fs.writeFileSync(filePath, JSON.stringify(payload, null, 2), "utf8");
+    console.log(`✅ json 出力完了: ${filePath}`);
+
+    outputs.json = { dir: periodDir, filePath };
+  }
+
+  return { outputs };
 }
 
 module.exports = { writeOutput, formatText };

@@ -1,33 +1,36 @@
+const path = require("path");
 require("dotenv").config();
 
-// TODO: 将来的には data/employees.json から取得
-const EMPLOYEE_IDS = [
-  "a001",
-  "a002",
-];
+const { readJsonPreferReal, validateEmployeeMap, validateTaskMap, validateOutputFlags } = require("./config/loaders");
 
-// 業務コード → 業務名
-/// TODO: 将来的には data/tasks.json などに移行
-const taskMap = {
-  T100: "○○案件",
-  T200: "△△案件",
-  T400: "××案件",
-  T500: "ミーティング",
-  T600: "雑務",
-  T700: "研修",
-  T800: "テスト",
-  T900: "その他",
-  T000: "休憩",
-};
+const dataDir = path.join(__dirname, "..", "data");
+const settingsDir = path.join(__dirname, "..", "settings");
 
-const serverBasePath = process.env.SERVER_BASE_PATH // コピー元
-const localDir = process.env.LOCAL_CSV_DIR;         // コピー先
-const outputDir = process.env.OUTPUT_DIR;           // 集計結果の出力先
+// --- データ(data/) ---
+const employeeMap = readJsonPreferReal(dataDir, "employees.json", "employees.example.json");
+validateEmployeeMap(employeeMap);
+
+const taskMap = readJsonPreferReal(dataDir, "tasks.json", "tasks.example.json");
+validateTaskMap(taskMap);
+
+// --- アプリ設定(settings/) ---
+const outputFlags = readJsonPreferReal(settingsDir, "output.json", "output.example.json");
+validateOutputFlags(outputFlags);
+
+// --- 環境変数(.env) ---
+const serverBasePath = process.env.SERVER_BASE_PATH; // コピー元
+const localDir = process.env.LOCAL_CSV_DIR; // コピー先
+const outputDir = process.env.OUTPUT_DIR; // 集計結果の出力先
+
+if (!serverBasePath || !localDir || !outputDir) {
+  throw new Error("[config] Missing required environment variables");
+}
 
 module.exports = {
-  EMPLOYEE_IDS,
+  employeeMap,
+  taskMap,
+  outputFlags,
   serverBasePath,
   localDir,
   outputDir,
-  taskMap,
 };
