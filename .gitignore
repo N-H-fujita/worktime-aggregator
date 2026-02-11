@@ -13,6 +13,9 @@ server_csv/
 local_csv/
 # 集計結果の出力ディレクトリ
 output/
+# 実データ（exampleファイルはコミットする）
+data/employees.json
+data/tasks.json
 
 # -----------------------------------
 # Node modules

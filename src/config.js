@@ -1,28 +1,105 @@
+const fs = require("fs");
+const path = require("path");
 require("dotenv").config();
 
-// TODO: 将来的には data/employees.json から取得
-const EMPLOYEE_IDS = [
-  "a001",
-  "a002",
-];
+const dataDir = path.join(__dirname, "..", "data");
 
-// 業務コード → 業務名
-/// TODO: 将来的には data/tasks.json などに移行
-const taskMap = {
-  T100: "○○案件",
-  T200: "△△案件",
-  T400: "××案件",
-  T500: "ミーティング",
-  T600: "雑務",
-  T700: "研修",
-  T800: "テスト",
-  T900: "その他",
-  T000: "休憩",
-};
+/**
+ * dataディレクトリ内のJSONファイルを読み込む。
+ * 実データ（realName）が存在すればそれを優先する。
+ * 存在しない場合は exampleName を代替として使用する。
+ *
+ * @param {string} realName 実データのJSONファイル名（例: "employees.json"）
+ * @param {string} exampleName サンプル用JSONファイル名（例: "employees.example.json"）
+ * @returns {any} パース済みのJSONデータ
+ * @throws {Error} 両方のファイルが存在しない場合、またはJSON形式が不正な場合
+ */
+function readJsonPreferReal(realName, exampleName) {
+  const realPath = path.join(dataDir, realName);
+  const examplePath = path.join(dataDir, exampleName);
 
-const serverBasePath = process.env.SERVER_BASE_PATH // コピー元
-const localDir = process.env.LOCAL_CSV_DIR;         // コピー先
-const outputDir = process.env.OUTPUT_DIR;           // 集計結果の出力先
+  // 本物があれば優先
+  if (fs.existsSync(realPath)) {
+    try {
+      const raw = fs.readFileSync(realPath, "utf8");
+      return JSON.parse(raw);
+    } catch (err) {
+      throw new Error(`[config] Invalid JSON in ${realName}: ${err.message}`);
+    }
+  }
+
+  // example.json があれば使う
+  if (fs.existsSync(examplePath)) {
+    console.warn(`[config] ${realName} not found. Using ${exampleName}.`);
+    try {
+      const raw = fs.readFileSync(examplePath, "utf8");
+      return JSON.parse(raw);
+    } catch (err) {
+      throw new Error(`[config] Invalid JSON in ${exampleName}: ${err.message}`);
+    }
+  }
+
+  // どちらもない場合
+  throw new Error(
+    `[config] ${realName} not found.\n` +
+    `Please create data/${realName} (you can copy from data/${exampleName}).`
+  );
+}
+
+function validateEmployeeIds(employeeIds) {
+  if (!Array.isArray(employeeIds)) {
+    throw new Error("[config] employees.json must be an array of strings");
+  }
+
+  for (const id of employeeIds) {
+    if (typeof id !== "string" || id.trim() === "") {
+      throw new Error("[config] employees.json contains invalid employee id");
+    }
+  }
+
+  const unique = new Set(employeeIds);
+  if (unique.size !== employeeIds.length) {
+    throw new Error("[config] employees.json contains duplicate employee ids");
+  }
+
+  // 任意：形式チェック（必要なら）
+  // const re = /^a\d{3}$/;
+  // const invalid = employeeIds.find((id) => !re.test(id));
+  // if (invalid) throw new Error(`[config] invalid employee id format: ${invalid}`);
+}
+
+function validateTaskMap(taskMap) {
+  if (!taskMap || typeof taskMap !== "object" || Array.isArray(taskMap)) {
+    throw new Error("[config] tasks.json must be a key:value object");
+  }
+
+  for (const [code, name] of Object.entries(taskMap)) {
+    if (typeof code !== "string" || code.trim() === "") {
+      throw new Error("[config] tasks.json contains invalid task code");
+    }
+    if (typeof name !== "string" || name.trim() === "") {
+      throw new Error(`[config] tasks.json has empty task name for code: ${code}`);
+    }
+  }
+
+  // 任意：形式チェック（必要なら）
+  // const re = /^T\d{3}$/;
+  // const invalid = Object.keys(taskMap).find((c) => !re.test(c));
+  // if (invalid) throw new Error(`[config] invalid task code format: ${invalid}`);
+}
+
+const EMPLOYEE_IDS = readJsonPreferReal("employees.json", "employees.example.json");
+const taskMap = readJsonPreferReal("tasks.json", "tasks.example.json");
+validateEmployeeIds(EMPLOYEE_IDS);
+validateTaskMap(taskMap);
+
+const serverBasePath = process.env.SERVER_BASE_PATH; // コピー元
+const localDir = process.env.LOCAL_CSV_DIR; // コピー先
+const outputDir = process.env.OUTPUT_DIR; // 集計結果の出力先
+
+if (!serverBasePath || !localDir || !outputDir) {
+  throw new Error("[config] Missing required environment variables");
+}
 
 module.exports = {
   EMPLOYEE_IDS,
